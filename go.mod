@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	go.etcd.io/etcd v3.3.27+incompatible
+	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	k8s.io/api v0.23.4
 	k8s.io/apimachinery v0.23.4
 )
