@@ -1,2 +1,2 @@
 # gopractice
-go practice demo
+go practice demo.
