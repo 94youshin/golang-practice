@@ -1,4 +1,4 @@
-package main
+package terminal
 
 import (
 	"log"
@@ -7,7 +7,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func main() {
+func Terminal() {
 	// 建立SSH客户端连接
 	client, err := ssh.Dial("tcp", "127.0.0.1:22", &ssh.ClientConfig{
 		User:            "root",
