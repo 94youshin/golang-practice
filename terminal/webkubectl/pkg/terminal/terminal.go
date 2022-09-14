@@ -13,7 +13,7 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
-const END_OF_TRANSMISSION = "\u0004"
+const EndOfTransmission = "\u0004"
 
 type PtyHandler interface {
 	io.Reader
@@ -21,23 +21,23 @@ type PtyHandler interface {
 	remotecommand.TerminalSizeQueue
 }
 
-// TerminalSession implements PtyHandler (using a SockJS connection)
-type TerminalSession struct {
+// Session TerminalSession implements PtyHandler (using a SockJS connection)
+type Session struct {
 	ws       *websocket.Conn
 	sizeChan chan remotecommand.TerminalSize
 	doneChan chan struct{}
 }
 
-type TerminalMessage struct {
+type Message struct {
 	Op   string `json:"op"`
 	Data string `json:"data,omitempty"`
 	Rows uint16 `json:"rows,omitempty"`
 	Cols uint16 `json:"cols,omitempty"`
 }
 
-// TerminalSize handles pty->process resize events
-// Called in a loop from remotecommand as long as the process is running
-func (t TerminalSession) Next() *remotecommand.TerminalSize {
+// Next TerminalSize handles pty->process resize events
+// Called in a loop from remote command as long as the process is running
+func (t Session) Next() *remotecommand.TerminalSize {
 	select {
 	case size := <-t.sizeChan:
 		return &size
@@ -47,32 +47,32 @@ func (t TerminalSession) Next() *remotecommand.TerminalSize {
 }
 
 // Read handles pty->process messages (stdin, resize)
-// Called in a loop from remotecommand as long as the process is running
-func (t TerminalSession) Read(p []byte) (int, error) {
+// Called in a loop from remote command as long as the process is running
+func (t Session) Read(p []byte) (int, error) {
 	_, m, err := t.ws.ReadMessage()
 	if err != nil {
 		// Send terminated signal to process to avoid resource leak
-		return copy(p, END_OF_TRANSMISSION), err
+		return copy(p, EndOfTransmission), err
 	}
-	var msg TerminalMessage
+	var msg Message
 	if err = json.Unmarshal(m, &msg); err != nil {
-		return copy(p, END_OF_TRANSMISSION), err
+		return copy(p, EndOfTransmission), err
 	}
 	switch msg.Op {
 	case "stdin":
 		return copy(p, msg.Data), nil
 	case "resize":
-		//t.sizeChan <- remotecommand.TerminalSize{Width: msg.Cols, Height: msg.Rows}
+		//t.sizeChan <- remote command.TerminalSize{Width: msg.Cols, Height: msg.Rows}
 		return 0, nil
 	default:
-		return copy(p, END_OF_TRANSMISSION), fmt.Errorf("unknown message type '%s'", msg.Op)
+		return copy(p, EndOfTransmission), fmt.Errorf("unknown message type '%s'", msg.Op)
 	}
 }
 
 // Write handles process->pty stdout
-// Called from remotecommand whenever there is any output
-func (t TerminalSession) Write(p []byte) (int, error) {
-	msg, err := json.Marshal(TerminalMessage{
+// Called from remote command whenever there is any output
+func (t Session) Write(p []byte) (int, error) {
+	msg, err := json.Marshal(Message{
 		Op:   "stdout",
 		Data: string(p),
 	})
@@ -86,8 +86,8 @@ func (t TerminalSession) Write(p []byte) (int, error) {
 }
 
 // Toast can be used to send the user any OOB messages
-// hterm puts these in the center of the terminal
-func (t TerminalSession) Toast(p string) error {
+// iterm puts these in the center of the terminal
+func (t Session) Toast(p string) error {
 	if err := t.ws.WriteMessage(websocket.TextMessage, []byte(p)); err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func startProcess(k8sClient kubernetes.Interface, cfg *rest.Config, cmd []string
 }
 
 func WaitForTerminal(ws *websocket.Conn, client kubernetes.Interface, config *rest.Config) {
-	pyHandler := TerminalSession{}
+	pyHandler := Session{}
 	pyHandler.ws = ws
 
 	err := startProcess(client, config, []string{"sh"}, pyHandler)

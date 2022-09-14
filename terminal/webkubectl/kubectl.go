@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/usmhk/gopractice/terminal/webkubectl/pkg/terminal"
+	"github.com/usmhk/golang-practice/terminal/webkubectl/pkg/terminal"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
